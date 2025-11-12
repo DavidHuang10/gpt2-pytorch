@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn 
 import torch.nn.functional as F
-
+import numpy as np
+import math
 class LayerNorm(nn.Module): 
   def __init__(self, embed_dim): 
     super().__init__()
@@ -23,8 +24,24 @@ class SelfAttention(nn.Module):
 
   def forward(self, x): 
     B, T, C = x.size() # batch size, sequence length, embedding dimensionality (embed_dim)
-    ...
-    y = torch.randn_like(x)
+    #step 1
+    q,k,v = self.map_qkv(x).split(self.embed_dim, dim=2)
+
+    #step 2
+    q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+    k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+    v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+
+
+    attn_weights = q @ k.transpose(-2, -1) * (1 / math.sqrt(C // self.n_head))
+    
+    
+    attn_weights = attn_weights.masked_fill(self.mask[:, :, :T, :T] == 0, float('-inf'))
+
+    attn_weights = F.softmax(attn_weights, dim=-1)
+    y = attn_weights @ v
+    y = y.transpose(1, 2).contiguous().view(B, T, C)
+
     assert y.shape == (B, T, C)
     return y
 

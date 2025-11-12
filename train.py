@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from model import Transformer
 from data import get_dataloaders
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # Hyperparameters
 block_size = 64
@@ -27,6 +28,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay
 
 # Training loop, one epoch only
 model.train()
+losses = []
 for epoch_num, (x, y) in enumerate(tqdm(train_loader)):
   if epoch_num >= max_epochs:
       break
@@ -41,5 +43,17 @@ for epoch_num, (x, y) in enumerate(tqdm(train_loader)):
   loss.backward()
   optimizer.step()
 
+  losses.append(loss.item())
+
 torch.save(model, "model.pt")
+
+# Plot loss
+plt.figure(figsize=(10, 6))
+plt.plot(losses)
+plt.xlabel('Iteration')
+plt.ylabel('Loss')
+plt.title('Training Loss Over Time')
+plt.grid(True)
+plt.savefig('training_loss.png')
+plt.close()
 
